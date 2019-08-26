@@ -2,12 +2,15 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
+#include <string.h>
 
-#define PORT 9002
+#define PORT 80
 #define MAX 1024
+#define LARGE 4096
+
 
 #ifdef __WIN32__
-# include <winsock2.h>
+#include <winsock2.h>
 #include <windows.h>
 #else
 #include <sys/socket.h>
@@ -15,8 +18,6 @@
 #endif
 
 int main() {
-
-    char serverMsg[MAX] = "Hello, this is a server msg";
 
     /* Create the server socket */
     int serverSocket;
@@ -38,9 +39,32 @@ int main() {
     int clientSocket;
     clientSocket = accept(serverSocket, NULL, NULL); // These are null since only looking at local machine
 
-    /* Sending message to client */
-    send(clientSocket, serverMsg, sizeof(serverMsg), 0);
 
+    while(1) {
+        char request[MAX];
+        char response[MAX];
+
+        recv(clientSocket, &request, sizeof(request), 0);
+        
+        if(strcmp(request, "put") == 0){
+            char putResponse[MAX] = "PUT";
+            /* Sending message to client */
+            send(clientSocket, putResponse, sizeof(putResponse), 0);
+        }
+
+        else if(strcmp(request, "get") == 0){
+            char getResponse[MAX] = "GET";
+            /* Sending message to client */
+            send(clientSocket, getResponse, sizeof(getResponse), 0);
+        }
+
+        else {
+            char unknownResponse[MAX] = "?";
+            send(clientSocket, unknownResponse, sizeof(unknownResponse), 0);
+        }
+    }
     /* Close the socket */
     close(serverSocket);
+
+    return 0;
 }
