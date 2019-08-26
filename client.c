@@ -51,8 +51,8 @@ int main(int argc, char *argv[]) {
     printf("-----------------\n");
 
     while(1) {
-        char request[LARGE];
-        char response[LARGE];
+        char request[MAX];
+        char response[MAX];
 
         printf("Enter Command: ");
         gets(request);
@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 
         send(clientSocket, request, sizeof(request), 0);
         recv(clientSocket, &response, sizeof(response), 0);
-        printf("Server Response: %s", response);
+        printf("Server Response: %s\n", response);
     }
     /* Close the socket */
     close(clientSocket);

@@ -42,25 +42,22 @@ int main() {
 
     while(1) {
         char request[MAX];
-        char response[MAX];
 
         recv(clientSocket, &request, sizeof(request), 0);
         
         if(strcmp(request, "put") == 0){
-            char putResponse[MAX] = "PUT";
-            /* Sending message to client */
-            send(clientSocket, putResponse, sizeof(putResponse), 0);
+            char response[MAX] = "PUT";
+            send(clientSocket, response, sizeof(response), 0);
         }
 
         else if(strcmp(request, "get") == 0){
-            char getResponse[MAX] = "GET";
-            /* Sending message to client */
-            send(clientSocket, getResponse, sizeof(getResponse), 0);
+            char response[MAX] = "GET";
+            send(clientSocket, response, sizeof(response), 0);
         }
 
         else {
-            char unknownResponse[MAX] = "?";
-            send(clientSocket, unknownResponse, sizeof(unknownResponse), 0);
+            char response[MAX] = "?";
+            send(clientSocket, response, sizeof(response), 0);
         }
     }
     /* Close the socket */
