@@ -1,7 +1,6 @@
 // SERVER
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
 #include <string.h>
 
 #define PORT 80
@@ -14,10 +13,13 @@
 #include <windows.h>
 #else
 #include <sys/socket.h>
-#include <netinet/in.h> 
+#include <netinet/in.h>
+#include <sys/types.h>
+#include<sys/utsname.h>
+#include <dirent.h>
 #endif
 
-int main() {
+int main(int argc, char *argv[]) {
 
     /* Create the server socket */
     int serverSocket;
@@ -39,15 +41,33 @@ int main() {
     int clientSocket;
     clientSocket = accept(serverSocket, NULL, NULL); // These are null since only looking at local machine
 
-
     while(1) {
+        char buffer[LARGE];
         char request[MAX];
-
+        
+        // Recieve which command should be executed
         recv(clientSocket, &request, sizeof(request), 0);
         
         if(strcmp(request, "put") == 0){
-            char response[MAX] = "PUT";
-            send(clientSocket, response, sizeof(response), 0);
+            char success[MAX] = "Successfully recieved file";
+            FILE *filePtr;
+            int wordNo;
+            int wordCount;
+            char fileName[MAX];
+
+            recv(clientSocket, &fileName, sizeof(fileName), 0);
+
+            filePtr = fopen(strcat(fileName), "w+");
+
+            recv(clientSocket, &wordCount, sizeof(int), 0);
+
+            while(wordNo != wordCount) {
+                recv(clientSocket, buffer, sizeof(buffer), 0);
+                fprintf(filePtr, "%s ", buffer);
+                wordNo++;
+            }
+
+            send(clientSocket, success, sizeof(success), 0);
         }
 
         else if(strcmp(request, "get") == 0){

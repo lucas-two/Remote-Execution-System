@@ -1,7 +1,8 @@
 // CLIENT
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/types.h>
+#include <time.h>
+#include <ctype.h>
 
 #define PORT 80
 #define MAX 1024
@@ -11,6 +12,7 @@
 #include <winsock2.h>
 #include <windows.h>
 #else
+#include <sys/types.h>
 #include <sys/socket.h>
 #include <netinet/in.h> 
 #include <arpa/inet.h>
@@ -53,6 +55,11 @@ int main(int argc, char *argv[]) {
     while(1) {
         char request[MAX];
         char response[MAX];
+        time_t startTime;
+        time_t endTime;
+        int timeTaken;
+        char progname[MAX];
+        char buffer[LARGE];
 
         printf("Enter Command: ");
         gets(request);
@@ -62,8 +69,45 @@ int main(int argc, char *argv[]) {
         }
 
         send(clientSocket, request, sizeof(request), 0);
-        recv(clientSocket, &response, sizeof(response), 0);
-        printf("Server Response: %s\n", response);
+
+
+        if(strcmp(request, "put") == 0) {
+            char fileName[MAX];
+            FILE *filePtr;
+            char charCount;
+            char charWords;
+            int wordCount = 0;
+
+            printf("Enter file name: ");
+            gets(fileName);
+            startTime = clock();
+
+            send(clientSocket, fileName, sizeof(fileName), 0);
+
+
+            filePtr = fopen(fileName, "r");
+
+            while(( charCount = getc(filePtr)) != EOF) {
+                fscanf(filePtr, "%s", buffer);
+                if(isspace(charCount) || charCount == '\t')
+                wordCount++;
+            }
+            send(clientSocket, &wordCount, sizeof(int), 0);
+            rewind(filePtr); // Go back to first char
+
+            while(charWords != EOF) {
+                fscanf(filePtr, "%s", buffer);
+                send(clientSocket, buffer, sizeof(buffer), 0);
+                charWords = fgetc(filePtr);
+            }
+
+            printf("File has been sent");
+            recv(clientSocket, &response, sizeof(response), 0);
+            endTime = clock();
+            timeTaken = (endTime - startTime) / CLOCKS_PER_SEC;
+            printf("Server Response (in %d secs): %s\n", timeTaken,response);
+        }
+
     }
     /* Close the socket */
     close(clientSocket);
