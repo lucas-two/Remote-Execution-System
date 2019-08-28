@@ -132,14 +132,17 @@ int main(int argc, char *argv[]) {
             send(clientSocket, request, sizeof(request), 0);
             char systemName[MAX];
             char systemVersion[MAX];
+            int systemProcessors;
 
             recv(clientSocket, &systemName, sizeof(systemName), 0); 
             recv(clientSocket, &systemVersion, sizeof(systemVersion), 0); 
+            recv(clientSocket, &systemProcessors, sizeof(systemVersion), 0); 
             recv(clientSocket, &response, sizeof(response), 0); 
-            // printf("%s", systemName);
+            
             printf("Server response: %s\n\n", response);
             printf(" [-] System Name: %s\n", systemName);
-            printf(" [-] System Version: %s\n\n", systemVersion);
+            printf(" [-] System Version: %s\n", systemVersion);
+            printf(" [-] Number of prosessors: %d\n\n", systemProcessors);
         }
 
         else{

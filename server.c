@@ -18,6 +18,8 @@
 #include <sys/types.h>
 #include<sys/utsname.h>
 #include <dirent.h>
+#include <sys/sysinfo.h>
+
 #endif
 
 int main(int argc, char *argv[]) {
@@ -124,14 +126,16 @@ int main(int argc, char *argv[]) {
             char success[MAX] = "Info found (in ";
             t = clock(); // Start runtime timer
 
-            struct utsname detect;
-            uname(&detect);
+            struct utsname systemInfo;
+            uname(&systemInfo);
 
             char systemName[MAX] = "";
             char systemVersion[MAX] = "";
+            int systemProcessors = 0;
+            systemProcessors = get_nprocs_conf();
 
-            strcpy(systemName, detect.sysname);
-            strcpy(systemVersion, detect.version);
+            strcpy(systemName, systemInfo.sysname);
+            strcpy(systemVersion, systemInfo.version);
 
             // End runtime timer & calculate time taken
             t = clock() - t;
@@ -144,6 +148,7 @@ int main(int argc, char *argv[]) {
 
             send(clientSocket, systemName, sizeof(systemName), 0);
             send(clientSocket, systemVersion, sizeof(systemVersion), 0);
+            send(clientSocket, &systemProcessors, sizeof(int), 0);
             send(clientSocket, success, sizeof(success), 0);
         }
 
