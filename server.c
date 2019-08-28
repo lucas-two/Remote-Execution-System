@@ -111,22 +111,44 @@ int main(int argc, char *argv[]) {
         }
 
         else if(strcmp(request, "run") == 0){
-            char response[MAX] = "run";
+            char response[MAX] = "RUN";
             send(clientSocket, response, sizeof(response), 0);
         }
 
         else if(strcmp(request, "list") == 0){
-            char response[MAX] = "GET";
+            char response[MAX] = "LIST";
             send(clientSocket, response, sizeof(response), 0);
         }
 
         else if(strcmp(request, "sys") == 0){
-            char response[MAX] = "GET";
-            send(clientSocket, response, sizeof(response), 0);
+            char success[MAX] = "Info found (in ";
+            t = clock(); // Start runtime timer
+
+            struct utsname detect;
+            uname(&detect);
+
+            char systemName[MAX] = "";
+            char systemVersion[MAX] = "";
+
+            strcpy(systemName, detect.sysname);
+            strcpy(systemVersion, detect.version);
+
+            // End runtime timer & calculate time taken
+            t = clock() - t;
+            timeTaken = ( (double) t ) / CLOCKS_PER_SEC;
+
+            // Format success message with timer result
+            gcvt(timeTaken, 8, timeTakenChar); 
+            strcat(success, timeTakenChar);
+            strcat(success, " secs)");
+
+            send(clientSocket, systemName, sizeof(systemName), 0);
+            send(clientSocket, systemVersion, sizeof(systemVersion), 0);
+            send(clientSocket, success, sizeof(success), 0);
         }
-        else {
-            char response[MAX] = "?";
-            send(clientSocket, response, sizeof(response), 0);
+
+        else{
+            // Do nothing
         }
     }
     /* Close the socket */

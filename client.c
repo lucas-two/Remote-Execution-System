@@ -65,9 +65,8 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        send(clientSocket, request, sizeof(request), 0);
-
         if(strcmp(request, "put") == 0) {
+            send(clientSocket, request, sizeof(request), 0);
             char fileName[MAX];
             FILE *filePtr;
             char overwriteFlag[SMALL];
@@ -105,6 +104,46 @@ int main(int argc, char *argv[]) {
             printf("File has been sent\n");
             recv(clientSocket, &response, sizeof(response), 0);
             printf("Server Response: %s\n",response);
+        }
+
+        else if(strcmp(request, "get") == 0) {
+            send(clientSocket, request, sizeof(request), 0);
+
+            recv(clientSocket, &response, sizeof(response), 0);
+            printf("Server Response: %s\n",response);
+        }
+
+        else if(strcmp(request, "run") == 0) {
+            send(clientSocket, request, sizeof(request), 0);
+            recv(clientSocket, &response, sizeof(response), 0); 
+
+
+            
+        }
+
+        else if(strcmp(request, "list") == 0) {
+            send(clientSocket, request, sizeof(request), 0);
+            recv(clientSocket, &response, sizeof(response), 0); 
+
+
+        }
+
+        else if(strcmp(request, "sys") == 0) {
+            send(clientSocket, request, sizeof(request), 0);
+            char systemName[MAX];
+            char systemVersion[MAX];
+
+            recv(clientSocket, &systemName, sizeof(systemName), 0); 
+            recv(clientSocket, &systemVersion, sizeof(systemVersion), 0); 
+            recv(clientSocket, &response, sizeof(response), 0); 
+            // printf("%s", systemName);
+            printf("Server response: %s\n\n", response);
+            printf(" [-] System Name: %s\n", systemName);
+            printf(" [-] System Version: %s\n\n", systemVersion);
+        }
+
+        else{
+            printf("Invalid Command");
         }
 
     }
