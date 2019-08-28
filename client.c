@@ -1,14 +1,14 @@
 // CLIENT
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <ctype.h>
 
 #define PORT 80
 #define MAX 1024
+#define SMALL 10
 #define LARGE 4096
 
-#ifdef __WIN32__
+#ifdef WIN32
 #include <winsock2.h>
 #include <windows.h>
 #else
@@ -55,9 +55,6 @@ int main(int argc, char *argv[]) {
     while(1) {
         char request[MAX];
         char response[MAX];
-        time_t startTime;
-        time_t endTime;
-        int timeTaken;
         char progname[MAX];
         char buffer[LARGE];
 
@@ -70,19 +67,23 @@ int main(int argc, char *argv[]) {
 
         send(clientSocket, request, sizeof(request), 0);
 
-
         if(strcmp(request, "put") == 0) {
             char fileName[MAX];
             FILE *filePtr;
+            char overwriteFlag[SMALL];
             char charCount;
             char charWords;
             int wordCount = 0;
 
             printf("Enter file name: ");
             gets(fileName);
-            startTime = clock();
 
             send(clientSocket, fileName, sizeof(fileName), 0);
+
+            printf("Would you like to overwrite? [-f] (yes/no):");
+            gets(overwriteFlag);
+
+            send(clientSocket, overwriteFlag, sizeof(char), 0);
 
 
             filePtr = fopen(fileName, "r");
@@ -101,11 +102,9 @@ int main(int argc, char *argv[]) {
                 charWords = fgetc(filePtr);
             }
 
-            printf("File has been sent");
+            printf("File has been sent\n");
             recv(clientSocket, &response, sizeof(response), 0);
-            endTime = clock();
-            timeTaken = (endTime - startTime) / CLOCKS_PER_SEC;
-            printf("Server Response (in %d secs): %s\n", timeTaken,response);
+            printf("Server Response: %s\n",response);
         }
 
     }

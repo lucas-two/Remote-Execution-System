@@ -2,13 +2,14 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #define PORT 80
 #define MAX 1024
+#define SMALL 10
 #define LARGE 4096
 
-
-#ifdef __WIN32__
+#ifdef WIN32
 #include <winsock2.h>
 #include <windows.h>
 #else
@@ -44,29 +45,63 @@ int main(int argc, char *argv[]) {
     while(1) {
         char buffer[LARGE];
         char request[MAX];
-        
+        char timeTakenChar[MAX];
+        clock_t t;
+        float timeTaken;
+
         // Recieve which command should be executed
         recv(clientSocket, &request, sizeof(request), 0);
         
+        // PUT (Recieving file)
         if(strcmp(request, "put") == 0){
-            char success[MAX] = "Successfully recieved file";
-            FILE *filePtr;
+            char success[MAX] = "Successfully saved file (in ";
+            FILE *serverFilePtr;
             int wordNo;
             int wordCount;
+            char overwriteFlag[SMALL];
             char fileName[MAX];
 
+            // Recieve name of file
             recv(clientSocket, &fileName, sizeof(fileName), 0);
 
-            filePtr = fopen(strcat(fileName), "w+");
+            // Recieve wheather overwriting or not
+            recv(clientSocket, &overwriteFlag, sizeof(fileName), 0);
 
+            t = clock(); // Start runtime timer
+
+            // NOTE: Should change 'savedFile' here to reflect the fileName.
+            // However, this was causing a 'stack dump' and so SavedFile is used
+            // as a placeholder.
+            if(strcmp(overwriteFlag, "yes") == 0){
+                serverFilePtr = fopen("SavedFile", "w+");
+            }
+            else {
+                // NOT YET IMPLEMENTED
+                // [Check if file exists]
+                serverFilePtr = fopen("SavedFile", "w+");
+                // IF does exist -> Error MSG
+                }
+            
+            // Get number of words 
             recv(clientSocket, &wordCount, sizeof(int), 0);
 
+            // Print each word recieved from the user to the new file.
             while(wordNo != wordCount) {
-                recv(clientSocket, buffer, sizeof(buffer), 0);
-                fprintf(filePtr, "%s ", buffer);
+                recv(clientSocket, &buffer, sizeof(buffer), 0);
+                printf("%s", buffer);
+                fprintf(serverFilePtr, "%s ", buffer);
                 wordNo++;
             }
+             // End runtime timer & calculate time taken
+            t = clock() - t;
+            timeTaken = ( (double) t ) / CLOCKS_PER_SEC;
 
+            // Format success message with timer result
+            gcvt(timeTaken, 8, timeTakenChar); 
+            strcat(success, timeTakenChar);
+            strcat(success, " secs)");
+
+            // Send success message to user
             send(clientSocket, success, sizeof(success), 0);
         }
 
@@ -75,6 +110,20 @@ int main(int argc, char *argv[]) {
             send(clientSocket, response, sizeof(response), 0);
         }
 
+        else if(strcmp(request, "run") == 0){
+            char response[MAX] = "run";
+            send(clientSocket, response, sizeof(response), 0);
+        }
+
+        else if(strcmp(request, "list") == 0){
+            char response[MAX] = "GET";
+            send(clientSocket, response, sizeof(response), 0);
+        }
+
+        else if(strcmp(request, "sys") == 0){
+            char response[MAX] = "GET";
+            send(clientSocket, response, sizeof(response), 0);
+        }
         else {
             char response[MAX] = "?";
             send(clientSocket, response, sizeof(response), 0);
