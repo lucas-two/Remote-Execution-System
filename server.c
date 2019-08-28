@@ -19,6 +19,7 @@
 #include<sys/utsname.h>
 #include <dirent.h>
 #include <sys/sysinfo.h>
+#include <dirent.h>
 #endif
 
 int main(int argc, char *argv[]) {
@@ -163,4 +164,33 @@ int main(int argc, char *argv[]) {
     close(serverSocket);
 
     return 0;
+}
+
+
+#include <stdio.h>
+#include <sys/types.h>
+#include <dirent.h>
+#include "functions.h"
+
+void dir () {
+    char dirName[MAX];
+	printf("Enter a directory name: ");
+    gets(dirName);
+
+    struct dirent *pDirent;
+    DIR *dir_ptr; // Pointer to the directory
+
+    dir_ptr = opendir(dirName); // Open input directory
+
+    // Directory not found
+    if (dir_ptr == NULL) {
+        printf ("Cannot open '%s' directory\n", dirName);
+    }
+
+    // While there are files in the directory, read them
+    while ((pDirent = readdir(dir_ptr)) != NULL) {
+        printf (" - %s\n", pDirent->d_name);
+    }
+
+    closedir (dir_ptr); // Close directory
 }
