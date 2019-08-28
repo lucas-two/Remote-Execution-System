@@ -19,7 +19,6 @@
 #include<sys/utsname.h>
 #include <dirent.h>
 #include <sys/sysinfo.h>
-
 #endif
 
 int main(int argc, char *argv[]) {
@@ -122,18 +121,20 @@ int main(int argc, char *argv[]) {
             send(clientSocket, response, sizeof(response), 0);
         }
 
+        // SYS (Displaying system information)
         else if(strcmp(request, "sys") == 0){
-            char success[MAX] = "Info found (in ";
             t = clock(); // Start runtime timer
 
+            // Creating a systemInfo variable to read the system info from
             struct utsname systemInfo;
             uname(&systemInfo);
 
             char systemName[MAX] = "";
             char systemVersion[MAX] = "";
             int systemProcessors = 0;
-            systemProcessors = get_nprocs_conf();
+            systemProcessors = get_nprocs_conf(); // Calls function which returns no. of processors
 
+            // Copies the system info details into strings
             strcpy(systemName, systemInfo.sysname);
             strcpy(systemVersion, systemInfo.version);
 
@@ -142,18 +143,20 @@ int main(int argc, char *argv[]) {
             timeTaken = ( (double) t ) / CLOCKS_PER_SEC;
 
             // Format success message with timer result
+            char success[MAX] = "Found info (in ";
             gcvt(timeTaken, 8, timeTakenChar); 
             strcat(success, timeTakenChar);
             strcat(success, " secs)");
 
+            // Send data to client
+            send(clientSocket, success, sizeof(success), 0);
             send(clientSocket, systemName, sizeof(systemName), 0);
             send(clientSocket, systemVersion, sizeof(systemVersion), 0);
             send(clientSocket, &systemProcessors, sizeof(int), 0);
-            send(clientSocket, success, sizeof(success), 0);
-        }
 
-        else{
+        } else {
             // Do nothing
+            // [Added to fix a bug]
         }
     }
     /* Close the socket */
