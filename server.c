@@ -58,62 +58,50 @@ int main(int argc, char *argv[]) {
         
         // PUT (Recieving file)
         if(strcmp(request, "put") == 0){
-            char success[MAX] = "Successfully saved file (in ";
-            FILE *serverFilePtr;
-            int wordNo;
-            int wordCount;
-            char overwriteFlag[SMALL];
+            char character;
             char fileName[MAX];
+            char filePath[MAX] = "serverprogs/";
+            int charCount;
+            FILE *serverFilePointer;
 
-            // Recieve name of file
+            // Get file name & No. of characters in file.
             recv(clientSocket, &fileName, sizeof(fileName), 0);
-
-            // Recieve wheather overwriting or not
-            recv(clientSocket, &overwriteFlag, sizeof(fileName), 0);
+            recv(clientSocket, &charCount, sizeof(charCount), 0);
 
             t = clock(); // Start runtime timer
 
-            // NOTE: Should change 'savedFile' here to reflect the fileName.
-            // However, this was causing a 'stack dump' and so SavedFile is used
-            // as a placeholder.
-            if(strcmp(overwriteFlag, "yes") == 0){
-                serverFilePtr = fopen("SavedFile", "w+");
-            }
-            else {
-                // NOT YET IMPLEMENTED
-                // [Check if file exists]
-                serverFilePtr = fopen("SavedFile", "w+");
-                // IF does exist -> Error MSG
-                }
-            
-            // Get number of words 
-            recv(clientSocket, &wordCount, sizeof(int), 0);
+            // Add file name to the file path (so it will store in correct dir)
+            strcat(filePath, fileName);
+            serverFilePointer = fopen(filePath, "w+");
 
-            // Print each word recieved from the user to the new file.
-            while(wordNo != wordCount) {
-                recv(clientSocket, &buffer, sizeof(buffer), 0);
-                printf("%s", buffer);
-                fprintf(serverFilePtr, "%s ", buffer);
-                wordNo++;
+            // Get each character from client and parse them into new file
+            int counter = 0;
+            while(counter < charCount) {
+                recv(clientSocket, &character, sizeof(character), 0);
+                fputc(character, serverFilePointer);
+                counter++;
             }
+            fclose(serverFilePointer);
+
             // End runtime timer & calculate time taken
             t = clock() - t;
             timeTaken = ( (double) t ) / CLOCKS_PER_SEC;
 
             // Format success message with timer result
-            gcvt(timeTaken, 8, timeTakenChar); 
+            char success[MAX] = "Successfully saved (in ";
+
+            gcvt(timeTaken, 8, timeTakenChar);
             strcat(success, timeTakenChar);
             strcat(success, " secs)");
 
-            // Send success message to user
             send(clientSocket, success, sizeof(success), 0);
         }
 
         else if(strcmp(request, "get") == 0){
-            char response[MAX] = "GET";
-            send(clientSocket, response, sizeof(response), 0);
+
         }
 
+        // RUN (Execute a file)
         else if(strcmp(request, "run") == 0){
             char fileName[MAX] = "serverprogs/";
             char progName[MAX];
@@ -130,14 +118,16 @@ int main(int argc, char *argv[]) {
             recv(clientSocket, &progName, sizeof(progName), 0);
             recv(clientSocket, &args, sizeof(args), 0);
 
+            // Format strings to be run
             strcat(fileName, progName);
             strcat(makeTxt, fileName);
             strcat(runTxt, fileName);
             strcat(runTxt, " ");
             strcat(runTxt, args);
 
-            system(makeTxt);
-
+            system(makeTxt); // Compile file
+            
+            // Get number of lines in the file (that's whats meant by word count)
             exeWordCount = popen(runTxt, "r");
             while (fgets(line, sizeof(line), exeWordCount) != NULL) {
                 wordCount++;
@@ -146,16 +136,16 @@ int main(int argc, char *argv[]) {
 
             send(clientSocket, &wordCount, sizeof(int), 0);
 
+            // Execute the file and read its contents.
             exeFile = popen(runTxt, "r");
             int lineNumber = 1;
             while (fgets(line, sizeof(line), exeFile) != NULL) {
                 send(clientSocket, line, sizeof(line), 0);
-                // If we get to 40 -> wait for user input
+                // If we get to line 40 -> wait for user input
                 if((lineNumber % LINES) == 0){
                     recv(clientSocket, &pause, sizeof(pause), 0);
                 }
                 lineNumber++;
-
             }
             pclose(exeFile);
             
