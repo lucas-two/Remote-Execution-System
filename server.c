@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
         // Recieve which command should be executed
         recv(clientSocket, &request, sizeof(request), 0);
         
-        // PUT (Recieving file)
+        // --- PUT ---
         if(strcmp(request, "put") == 0){
             char character;
             char fileName[MAX];
@@ -97,11 +97,54 @@ int main(int argc, char *argv[]) {
             send(clientSocket, success, sizeof(success), 0);
         }
 
+        // --- GET ---
         else if(strcmp(request, "get") == 0){
+            char character;
+            char fileName[MAX];
+            char filePath[MAX] = "serverprogs/";
+            FILE *filePointer;
+            FILE *countFilePointer;
 
+            // Get file name & No. of characters in file.
+            recv(clientSocket, &fileName, sizeof(fileName), 0);
+
+            t = clock(); // Start runtime timer
+
+            // Add file name to the file path (so it will read from right dir)
+            strcat(filePath, fileName);
+
+            // Count number of characters in file
+            int charCount = 0;
+            countFilePointer = fopen(filePath, "r");
+            while((character = fgetc(countFilePointer)) != EOF) {
+                charCount++;
+            }
+            fclose(countFilePointer);
+
+            send(clientSocket, &charCount, sizeof(int), 0);
+
+            // Send each character to the client
+            filePointer = fopen(filePath, "r");
+            while((character = fgetc(filePointer)) != EOF) {
+                send(clientSocket, &character, sizeof(character), 0);
+            }
+            fclose(filePointer);
+
+            // End runtime timer & calculate time taken
+            t = clock() - t;
+            timeTaken = ( (double) t ) / CLOCKS_PER_SEC;
+
+            // Format success message with timer result
+            char success[MAX] = "Successfully saved (in ";
+
+            gcvt(timeTaken, 8, timeTakenChar);
+            strcat(success, timeTakenChar);
+            strcat(success, " secs)");
+
+            send(clientSocket, success, sizeof(success), 0);
         }
 
-        // RUN (Execute a file)
+        // --- RUN ---
         else if(strcmp(request, "run") == 0){
             char fileName[MAX] = "serverprogs/";
             char progName[MAX];
@@ -153,7 +196,7 @@ int main(int argc, char *argv[]) {
             send(clientSocket, success, sizeof(success), 0);
         }
 
-        // LIST (Listing out programs in serverprogs)
+        // --- LIST ---
         else if(strcmp(request, "list") == 0){
 
             char dirName[MAX] = "serverprogs";
@@ -271,7 +314,7 @@ int main(int argc, char *argv[]) {
             closedir (dirPointer);
         }
 
-        // SYS (Displaying system information)
+        // --- SYS ---
         else if(strcmp(request, "sys") == 0){
             t = clock(); // Start runtime timer
 

@@ -69,18 +69,11 @@ int main(int argc, char *argv[]) {
             break;
         }
 
-        // --- PUT [Attempted Implementation] ---
+        // --- PUT [half working] ---
         /*
-        There appears to be a bug in this code in which
-        the server is not printing the contents to a file.
-
-        In addition, writing to a file of the same name as
-        fileName caused a 'stack dump' error on the server end.
-        As such, a placeholder 'savedFile' was used.
-
-        This implementation is missing an actual checker for already
-        created files and is unable to process multiple files at once in
-        and send the entire directory of a program.
+        Is able to copy individual files to the server but 
+        not directories containing source files. It also
+        cannot yet choose wheather to overwrite files or not.
          */
         if(strcmp(request, "put") == 0) {
             // Tell server what command to use
@@ -100,12 +93,11 @@ int main(int argc, char *argv[]) {
             // NOTE: Not yet implemented
             printf("Would you like to overwrite existing files [-f]? (yes/no): ");
             gets(overwriteFlag);
-            // send(clientSocket, &localflag, sizeof(localflag), 0);
+            // send(clientSocket, &overwriteFlag, sizeof(overwriteFlag), 0);
 
             // Count number of characters in file
             int charCount = 0;
             countFilePointer = fopen(fileName, "r");
-
             while((character = fgetc(countFilePointer)) != EOF) {
                 charCount++;
             }
@@ -113,6 +105,7 @@ int main(int argc, char *argv[]) {
 
             send(clientSocket, &charCount, sizeof(int), 0);
 
+            // Send each character to the server
             filePointer = fopen(fileName, "r");
             while((character = fgetc(filePointer)) != EOF) {
                 send(clientSocket, &character, sizeof(character), 0);
@@ -124,10 +117,40 @@ int main(int argc, char *argv[]) {
             
         }
 
-        // --- GET ---
-        else if(strcmp(request, "GET") == 0) {
+        // --- GET [Working]---
+        /* 
+        It can download source files from the server
+        It just dosen't need to reference a 'progname' folder.
+        */
+        else if(strcmp(request, "get") == 0) {
+            // Tell server what command to use
             send(clientSocket, request, sizeof(request), 0);
-            recv(clientSocket, &response, sizeof(response), 0); 
+
+            char character;
+            char overwriteFlag[SMALL];
+            char fileName[MAX];
+            FILE *filePointer;
+            FILE *countFilePointer;
+            int charCount;
+
+            // Get file name
+            printf("Enter source file name: ");
+            gets(fileName);
+            send(clientSocket, fileName, sizeof(fileName), 0);
+            recv(clientSocket, &charCount, sizeof(charCount), 0);
+
+            filePointer = fopen(fileName, "w+");
+
+            // Get each character from server and parse them into new file
+            int counter = 0;
+            while(counter < charCount) {
+                recv(clientSocket, &character, sizeof(character), 0);
+                fputc(character, filePointer);
+                counter++;
+            }
+            fclose(filePointer);
+
+            recv(clientSocket, &response, sizeof(response), 0);
             printf("Server Response: %s\n", response);
         }
 
