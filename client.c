@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
+#include <string.h>
 
 #define PORT 80
 #define MAX 1024
@@ -127,7 +128,7 @@ int main(int argc, char *argv[]) {
                 send(clientSocket, buffer, sizeof(buffer), 0);
                 charWords = fgetc(filePtr);
             }
-            
+
             printf("File has been sent\n");
             recv(clientSocket, &response, sizeof(response), 0);
             printf("Server Response: %s\n",response);
@@ -147,9 +148,69 @@ int main(int argc, char *argv[]) {
             printf("Server Response: %s\n",response);
 
         }
-        // --- LIST ---
+        // --- LIST [Working with tiny bug]---
+        /*
+        It appears when we use [-l], the stat info being
+        recorded may be related to the source file rather 
+        than the files within the source file. Attempts at fixing
+        this were made but did not fix the issue.
+        */
         else if(strcmp(request, "list") == 0) {
+             // Tell server what command to use
             send(clientSocket, request, sizeof(request), 0);
+
+            char dirName[MAX] = "serverprogs";
+            char longFlag[SMALL];
+            char progNameFlag[SMALL];
+            char progName[MAX];
+            int fileCount;
+            char nameOfFile[MAX] = "";
+            char creationOfFile[MAX] = "";
+            char permissionOfFile[MAX] = "";
+            int sizeOfFile;
+            
+            printf("Would you like to see long list [-l]? (yes/no): ");
+            gets(longFlag);
+            send(clientSocket, longFlag, sizeof(longFlag), 0);
+
+            printf("Would you like to look at a [progname]? (yes/no): ");
+            gets(progNameFlag);
+            send(clientSocket, progNameFlag, sizeof(progNameFlag), 0);
+
+            // [progname] provided
+            if(strcmp(progNameFlag, "yes") == 0) {
+                printf("Enter progname name: ");
+                gets(progName);
+                send(clientSocket, progName, sizeof(progName), 0);
+            }
+
+            recv(clientSocket, &fileCount, sizeof(fileCount), 0); 
+
+            //[-l] provided
+            int counter = 0;
+            if(strcmp(longFlag, "yes") == 0) {
+                while(counter != fileCount) {
+                    recv(clientSocket, &nameOfFile, sizeof(nameOfFile), 0); 
+                    recv(clientSocket, &sizeOfFile, sizeof(sizeOfFile), 0); 
+                    recv(clientSocket, &creationOfFile, sizeof(creationOfFile), 0); 
+                    recv(clientSocket, &permissionOfFile, sizeof(permissionOfFile), 0);
+                    printf ("[-] %s\n", nameOfFile);
+                    printf(" ~ File Size: %d bytes\n", sizeOfFile);
+                    printf(" ~ Creation Date: %s", creationOfFile);
+                    printf(" ~ Permissions: %s", permissionOfFile);
+                    printf("\n\n");
+                    counter++;
+                }
+            }
+            // [-l] not provided
+            else {
+                 while(counter != fileCount) {
+                    recv(clientSocket, &nameOfFile, sizeof(nameOfFile), 0); 
+                    printf ("[-] %s\n", nameOfFile);
+                    counter++;
+                 }
+            }
+
             recv(clientSocket, &response, sizeof(response), 0); 
             printf("Server Response: %s\n",response);
         }

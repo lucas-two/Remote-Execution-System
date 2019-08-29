@@ -19,6 +19,7 @@
 #include<sys/utsname.h>
 #include <dirent.h>
 #include <sys/sysinfo.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #endif
 
@@ -94,7 +95,7 @@ int main(int argc, char *argv[]) {
                 fprintf(serverFilePtr, "%s ", buffer);
                 wordNo++;
             }
-             // End runtime timer & calculate time taken
+            // End runtime timer & calculate time taken
             t = clock() - t;
             timeTaken = ( (double) t ) / CLOCKS_PER_SEC;
 
@@ -117,9 +118,122 @@ int main(int argc, char *argv[]) {
             send(clientSocket, response, sizeof(response), 0);
         }
 
+        // LIST (Listing out programs in serverprogs)
         else if(strcmp(request, "list") == 0){
-            char response[MAX] = "LIST";
-            send(clientSocket, response, sizeof(response), 0);
+
+            char dirName[MAX] = "serverprogs";
+            char progName[MAX];
+            char longFlag[SMALL];
+            char progNameFlag[SMALL];
+            struct dirent *pDirent;
+            DIR *dirPointer;
+
+            // Get optional flags
+            recv(clientSocket, &longFlag, sizeof(longFlag), 0);
+            recv(clientSocket, &progNameFlag, sizeof(longFlag), 0);
+
+            // [progname] provided - Update directory path
+            if(strcmp(progNameFlag, "yes") == 0) {
+                recv(clientSocket, &progName, sizeof(progName), 0);
+                strcat(dirName, "/");
+                strcat(dirName, progName);
+            }
+
+            t = clock(); // Start runtime timer
+
+            // Open directory
+            dirPointer = opendir(dirName);
+
+            // Error message if failed.
+            if (dirPointer == NULL) {
+                printf ("Cannot open '%s' directory\n", dirName);
+                exit(1);
+            }
+
+            // Getting amount of files within directory
+            /* Since rewind() was not working on the dirPointer
+            a new countPointer was used to get the number of files */ 
+            DIR *dirPointerFileCount;
+            int fileCount = 0;
+            dirPointerFileCount = opendir(dirName);
+            while ((pDirent = readdir(dirPointerFileCount)) != NULL) {
+                fileCount++;
+            }
+
+            // Send number of files to client
+            send(clientSocket, &fileCount, sizeof(int), 0);
+        
+            // [-l] provided - list out more details about each file
+            if(strcmp(longFlag, "yes") == 0) {
+                while ((pDirent = readdir(dirPointer)) != NULL) {
+                    struct stat st;
+                    struct tm* clock;
+                    char nameOfFile[MAX] = "";
+                    char creationOfFile[MAX] = "";
+                    char permissionOfFile[MAX] = "";
+                    int sizeOfFile;
+
+                    stat(pDirent->d_name, &st);
+
+                    // Get name of file
+                    strcpy(nameOfFile, pDirent->d_name);
+
+                    // Get creation date of file
+                    strcpy(creationOfFile, ctime(&st.st_birthtime));
+
+                    // Get permissions
+                    if(st.st_mode & S_IRUSR) {
+                        strcat(permissionOfFile, "r");
+                    } else {
+                        strcat(permissionOfFile, "-");
+                    }
+
+                    if(st.st_mode & S_IWUSR) {
+                        strcat(permissionOfFile, "w");
+                    } else {
+                        strcat(permissionOfFile, "-");
+                    }
+
+                    if(st.st_mode & S_IXUSR) {
+                        strcat(permissionOfFile, "x");
+                    } else {
+                        strcat(permissionOfFile, "-");
+                    }
+
+                    // Send info the client
+                    send(clientSocket, nameOfFile, sizeof(nameOfFile), 0);
+                    send(clientSocket, &sizeOfFile, sizeof(int), 0);
+                    send(clientSocket, creationOfFile, sizeof(creationOfFile), 0);
+                    send(clientSocket, permissionOfFile, sizeof(permissionOfFile), 0);
+                }
+            }
+
+            // Otherwise just list out all file names
+            else {
+                while ((pDirent = readdir(dirPointer)) != NULL) {
+                    char nameOfFile[MAX] = "";
+
+                    // Get file name
+                    strcpy(nameOfFile, pDirent->d_name);
+
+                    // Send info to the client
+                    send(clientSocket, nameOfFile, sizeof(nameOfFile), 0);
+                }
+            }
+
+            // End runtime timer & calculate time taken
+            t = clock() - t;
+            timeTaken = ( (double) t ) / CLOCKS_PER_SEC;
+
+            // Format success message with timer result
+            char success[MAX] = "Successfully found (in ";
+
+            gcvt(timeTaken, 8, timeTakenChar);
+            strcat(success, timeTakenChar);
+            strcat(success, " secs)");
+            
+            send(clientSocket, success, sizeof(success), 0);
+            closedir (dirPointer);
         }
 
         // SYS (Displaying system information)
@@ -164,33 +278,4 @@ int main(int argc, char *argv[]) {
     close(serverSocket);
 
     return 0;
-}
-
-
-#include <stdio.h>
-#include <sys/types.h>
-#include <dirent.h>
-#include "functions.h"
-
-void dir () {
-    char dirName[MAX];
-	printf("Enter a directory name: ");
-    gets(dirName);
-
-    struct dirent *pDirent;
-    DIR *dir_ptr; // Pointer to the directory
-
-    dir_ptr = opendir(dirName); // Open input directory
-
-    // Directory not found
-    if (dir_ptr == NULL) {
-        printf ("Cannot open '%s' directory\n", dirName);
-    }
-
-    // While there are files in the directory, read them
-    while ((pDirent = readdir(dir_ptr)) != NULL) {
-        printf (" - %s\n", pDirent->d_name);
-    }
-
-    closedir (dir_ptr); // Close directory
 }
