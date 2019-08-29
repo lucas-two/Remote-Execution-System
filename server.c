@@ -5,9 +5,8 @@
 #include <time.h>
 
 #define PORT 80
-#define MAX 1024
 #define SMALL 10
-#define LARGE 4096
+#define MAX 1024
 #define LINES 40
 
 #ifdef WIN32
@@ -47,8 +46,10 @@ int main(int argc, char *argv[]) {
     clientSocket = accept(serverSocket, NULL, NULL); // These are null since only looking at local machine
 
     while(1) {
-        char buffer[LARGE];
+        // Request that client makes (e.g. put, list, sys)
         char request[MAX];
+
+        // Timer variables
         char timeTakenChar[MAX];
         clock_t t;
         float timeTaken;
@@ -346,10 +347,6 @@ int main(int argc, char *argv[]) {
             send(clientSocket, systemName, sizeof(systemName), 0);
             send(clientSocket, systemVersion, sizeof(systemVersion), 0);
             send(clientSocket, &systemProcessors, sizeof(int), 0);
-
-        } else {
-            // Do nothing
-            // [Added to fix a bug]
         }
     }
     /* Close the socket */

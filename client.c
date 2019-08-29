@@ -5,10 +5,10 @@
 #include <string.h>
 
 #define PORT 80
-#define MAX 1024
 #define SMALL 10
-#define LARGE 4096
+#define MAX 1024
 #define LINES 40
+#define CLEARSCREEN "\e[1;1H\e[2J"
 
 #ifdef WIN32
 #include <winsock2.h>
@@ -21,6 +21,8 @@
 #endif
 
 int main(int argc, char *argv[]) {
+
+    printf(CLEARSCREEN);
 
     char *serverIP;
     serverIP = argv[1];
@@ -42,7 +44,6 @@ int main(int argc, char *argv[]) {
     if(connectionStatus == -1){
         printf("Error making connection");
     }
-
     printf("\nConnected to %s on port %d...\n", serverIP, PORT);
     printf("Server Commands\n");
     printf("-----------------\n");
@@ -55,14 +56,25 @@ int main(int argc, char *argv[]) {
     printf("-----------------\n");
 
     while(1) {
-        // Main variables.
+
         char request[MAX]; // What we ask the server (e.g. put or sys)
-        char response[MAX]; // What we get back from server (e.g. time taken msg)
-        char progname[MAX]; // Name of program file (Not used a lot)
-        char buffer[LARGE]; // Storing information in a buffer
+        char response[MAX]; // What we get back from server (e.g. time taken msg) 
 
         printf("Enter Command: ");
         gets(request);
+
+        printf(CLEARSCREEN);
+
+        printf("\nConnected to %s on port %d...\n", serverIP, PORT);
+        printf("Server Commands\n");
+        printf("-----------------\n");
+        printf("[-] put\n");
+        printf("[-] get\n");
+        printf("[-] run\n");
+        printf("[-] list\n");
+        printf("[-] sys\n");
+        printf("[-] quit\n");
+        printf("-----------------\n");        
 
         // Exit if quit is called.
         if(strcmp(request, "quit") == 0) {
@@ -114,7 +126,6 @@ int main(int argc, char *argv[]) {
 
             recv(clientSocket, &response, sizeof(response), 0);
             printf("Server Respose: %s\n", response);
-            
         }
 
         // --- GET [Working]---
@@ -173,8 +184,7 @@ int main(int argc, char *argv[]) {
             char pause[SMALL];
             char localFlag[SMALL];
 
-            // Actual sourcefile, not a dir holding programs
-            printf("Enter program name: ");
+            printf("Enter program name (without extension): ");
             gets(progName);
             send(clientSocket, &progName, sizeof(progName), 0);
 
@@ -205,7 +215,6 @@ int main(int argc, char *argv[]) {
             recv(clientSocket, &response, sizeof(response), 0);
             printf("Server Response: %s\n",response);
         }
-
 
         // --- LIST [Working with tiny bug]---
         /*
@@ -295,10 +304,10 @@ int main(int argc, char *argv[]) {
             printf(" [-] System Version: %s\n", systemVersion);
             printf(" [-] Number of prosessors: %d\n\n", systemProcessors);
         }
-
-        // INVALID
-        else{
-            printf("Invalid Command");
+        
+        // --- ? ---
+        else {
+            printf("Unknown Command\n");
         }
 
     }
