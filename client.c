@@ -8,6 +8,7 @@
 #define MAX 1024
 #define SMALL 10
 #define LARGE 4096
+#define LINES 40
 
 #ifdef WIN32
 #include <winsock2.h>
@@ -135,19 +136,52 @@ int main(int argc, char *argv[]) {
         }
 
         // --- GET ---
-        else if(strcmp(request, "get") == 0) {
-            send(clientSocket, request, sizeof(request), 0);
-            recv(clientSocket, &response, sizeof(response), 0);
-            printf("Server Response: %s\n",response);
-        }
-
-        // --- RUN ---
-        else if(strcmp(request, "run") == 0) {
+        else if(strcmp(request, "GET") == 0) {
             send(clientSocket, request, sizeof(request), 0);
             recv(clientSocket, &response, sizeof(response), 0); 
             printf("Server Response: %s\n",response);
 
         }
+
+        // --- RUN ---
+        else if(strcmp(request, "run") == 0) {
+            send(clientSocket, request, sizeof(request), 0);
+
+            char progName[MAX];
+            char line[MAX];
+            char args[MAX];
+            int wordCount;
+            char pause[SMALL];
+
+            // Actual sourcefile, not a dir holding programs
+            printf("Enter program name: ");
+            gets(progName);
+            send(clientSocket, &progName, sizeof(progName), 0);
+
+            printf("Enter program arguments: ");
+            gets(args);
+            send(clientSocket, &args, sizeof(args), 0);
+
+            recv(clientSocket, &wordCount, sizeof(int), 0);
+
+            int counter = 1;
+            while(counter - 1 != wordCount) {
+                if((counter % LINES) == 0) {
+                    printf(" - - - press enter to continue - - -");
+                    gets(pause);
+                    send(clientSocket, pause, sizeof(pause), 0);
+                }
+
+                recv(clientSocket, &line, sizeof(line), 0);
+                printf("%s", line);
+                counter++;
+            }
+
+            recv(clientSocket, &response, sizeof(response), 0);
+            printf("Server Response: %s\n",response);
+        }
+
+
         // --- LIST [Working with tiny bug]---
         /*
         It appears when we use [-l], the stat info being

@@ -8,6 +8,7 @@
 #define MAX 1024
 #define SMALL 10
 #define LARGE 4096
+#define LINES 40
 
 #ifdef WIN32
 #include <winsock2.h>
@@ -114,8 +115,53 @@ int main(int argc, char *argv[]) {
         }
 
         else if(strcmp(request, "run") == 0){
-            char response[MAX] = "RUN";
-            send(clientSocket, response, sizeof(response), 0);
+            char fileName[MAX] = "serverprogs/";
+            char progName[MAX];
+            char makeTxt[MAX] = "make ";
+            char runTxt[MAX] = "./";
+            char line[MAX];
+            char args[MAX];
+            int wordCount = 0;
+            char pause[SMALL]; // Temp variable for the 40 page per line limit.
+
+            FILE* exeFile;
+            FILE* exeWordCount;
+
+            recv(clientSocket, &progName, sizeof(progName), 0);
+            recv(clientSocket, &args, sizeof(args), 0);
+
+            strcat(fileName, progName);
+            strcat(makeTxt, fileName);
+            strcat(runTxt, fileName);
+            strcat(runTxt, " ");
+            strcat(runTxt, args);
+
+            system(makeTxt);
+
+            exeWordCount = popen(runTxt, "r");
+            while (fgets(line, sizeof(line), exeWordCount) != NULL) {
+                wordCount++;
+            }
+            pclose(exeWordCount);
+
+            send(clientSocket, &wordCount, sizeof(int), 0);
+
+            exeFile = popen(runTxt, "r");
+            int lineNumber = 1;
+            while (fgets(line, sizeof(line), exeFile) != NULL) {
+
+                // If we get to 40 -> wait for user input
+                if((lineNumber % LINES + 1) == 0){
+                    recv(clientSocket, &pause, sizeof(pause), 0);
+                }
+
+                send(clientSocket, line, sizeof(line), 0);
+                lineNumber++;
+            }
+            pclose(exeFile);
+            
+            char success[MAX] = "Successfully executed program";
+            send(clientSocket, success, sizeof(success), 0);
         }
 
         // LIST (Listing out programs in serverprogs)
