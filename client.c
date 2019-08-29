@@ -165,15 +165,15 @@ int main(int argc, char *argv[]) {
             recv(clientSocket, &wordCount, sizeof(int), 0);
 
             int counter = 1;
-            while(counter - 1 != wordCount) {
+            while(counter != wordCount + 1) {
+                recv(clientSocket, &line, sizeof(line), 0);
+                printf("%s", line);
+                
                 if((counter % LINES) == 0) {
                     printf(" - - - press enter to continue - - -");
                     gets(pause);
                     send(clientSocket, pause, sizeof(pause), 0);
                 }
-
-                recv(clientSocket, &line, sizeof(line), 0);
-                printf("%s", line);
                 counter++;
             }
 

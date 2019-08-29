@@ -149,14 +149,13 @@ int main(int argc, char *argv[]) {
             exeFile = popen(runTxt, "r");
             int lineNumber = 1;
             while (fgets(line, sizeof(line), exeFile) != NULL) {
-
+                send(clientSocket, line, sizeof(line), 0);
                 // If we get to 40 -> wait for user input
-                if((lineNumber % LINES + 1) == 0){
+                if((lineNumber % LINES) == 0){
                     recv(clientSocket, &pause, sizeof(pause), 0);
                 }
-
-                send(clientSocket, line, sizeof(line), 0);
                 lineNumber++;
+
             }
             pclose(exeFile);
             
